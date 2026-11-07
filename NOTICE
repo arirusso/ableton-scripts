@@ -1,0 +1,24 @@
+ableton-scripts
+Copyright (C) 2026 Ari Russo
+
+This applies to every program in this directory and its subdirectories
+(currently: hi-quality).
+
+These programs are free software: you can redistribute them and/or modify
+them under the terms of the GNU General Public License as published by the
+Free Software Foundation, either version 3 of the License, or (at your
+option) any later version. See the LICENSE file for the full text.
+
+These programs are distributed in the hope that they will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+more details.
+
+Additional term under section 7(b) of the GNU GPL v3 (attribution):
+
+  Any copy or modified version of these programs, in whole or in part, must
+  preserve the copyright notice "Copyright (C) 2026 Ari Russo" and an
+  attribution stating that the work is based on "ableton-scripts" by
+  Ari Russo. This attribution must appear in the source files, in this
+  NOTICE file, and in any documentation or help output that lists authors
+  or credits.

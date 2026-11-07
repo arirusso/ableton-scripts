@@ -1,0 +1,77 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+#
+# hi-quality, part of ableton-scripts - Copyright (C) 2026 Ari Russo
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Licensed under the GNU GPL v3 or later, with an attribution term under
+# section 7(b). See LICENSE and NOTICE in the ableton-scripts directory.
+
+require "optparse"
+require_relative "../lib/hi_quality"
+
+options = { devices: HiQuality::DEVICES.keys, suffix: "-hq", dry_run: false, force: false }
+
+parser = OptionParser.new do |o|
+  o.banner = <<~TXT
+    Usage: hi-quality [options] FILE.als|DIR ...
+
+    Writes a copy of each Live Set with Hi-Quality / oversampling turned on for
+    Glue Compressor, EQ Eight and Saturator. Originals are never modified.
+    Directories are searched recursively; Backup/ folders are skipped.
+
+  TXT
+  o.on("-n", "--dry-run", "Report what would change; write nothing") { options[:dry_run] = true }
+  o.on("-d", "--devices LIST", Array,
+       "Comma-separated subset of: #{HiQuality::DEVICES.keys.join(',')} (default: all)") do |list|
+    unknown = list - HiQuality::DEVICES.keys
+    abort "hi-quality: unknown device(s): #{unknown.join(', ')}" unless unknown.empty?
+    options[:devices] = list
+  end
+  o.on("-s", "--suffix SUFFIX", "Output filename suffix (default: -hq)") { |s| options[:suffix] = s }
+  o.on("-f", "--force", "Overwrite an existing output file") { options[:force] = true }
+  o.on("-h", "--help", "Show this help") { puts o; exit }
+  o.separator ""
+  o.separator "hi-quality, part of ableton-scripts by Ari Russo. Copyright (C) 2026."
+  o.separator "Free software under the GNU GPL v3 or later; see LICENSE and NOTICE."
+end
+
+begin
+  parser.parse!
+rescue OptionParser::ParseError => e
+  abort "hi-quality: #{e.message}\n\n#{parser}"
+end
+abort parser.to_s if ARGV.empty?
+
+NAMES = { "glue" => "Glue Compressor", "eq8" => "EQ Eight", "sat" => "Saturator" }.freeze
+failures = 0
+
+begin
+  files = HiQuality.collect(ARGV, options[:suffix])
+rescue HiQuality::Error => e
+  abort "hi-quality: #{e.message}"
+end
+abort "hi-quality: no .als files found" if files.empty?
+
+files.each do |path|
+  r = HiQuality.process(path, **options)
+  puts path
+  r[:stats].each do |key, s|
+    next if s.total.zero?
+
+    line = format("  %-16s %4d changed, %4d already on", NAMES[key], s.changed, s.already_on)
+    line += ", #{s.unrecognized} unrecognized (left alone)" if s.unrecognized.positive?
+    puts line
+  end
+  if r[:changed].zero?
+    puts "  nothing to change, no file written"
+  elsif options[:dry_run]
+    puts "  (dry run) would write #{r[:out]}"
+  else
+    puts "  wrote #{r[:out]}"
+  end
+rescue HiQuality::Error, SystemCallError => e
+  failures += 1
+  warn "#{path}\n  ERROR: #{e.message}"
+end
+
+exit(failures.zero? ? 0 : 1)
